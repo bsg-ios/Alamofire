@@ -50,8 +50,8 @@ public class Request {
     /// The progress of the request lifecycle.
     public var progress: NSProgress { return delegate.progress }
 
-    var startTime: CFAbsoluteTime?
-    var endTime: CFAbsoluteTime?
+    public var startTime: CFAbsoluteTime?
+    public var endTime: CFAbsoluteTime?
 
     // MARK: - Lifecycle
 
