@@ -118,7 +118,7 @@ public class Manager {
     let queue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL)
 
     /// The underlying session.
-    public let session: NSURLSession
+    public var session: NSURLSession
 
     /// The session delegate handling all the task and session delegate callbacks.
     public let delegate: SessionDelegate
@@ -238,16 +238,32 @@ public class Manager {
     public func request(URLRequest: URLRequestConvertible) -> Request {
         var dataTask: NSURLSessionDataTask!
         dispatch_sync(queue) { dataTask = self.session.dataTaskWithRequest(URLRequest.URLRequest) }
-
+        
         let request = Request(session: session, task: dataTask)
+        request.timeoutTimerCallback = { [weak self, weak request] _ in
+            guard let strongSelf = self else { return }
+            let configuration = strongSelf.session.configuration
+            let policy = strongSelf.session.serverTrustPolicyManager
+            strongSelf.session.invalidateAndCancel()
+            for subdelegate in strongSelf.delegate.subdelegates {
+                subdelegate.1.URLSession(strongSelf.session, task: subdelegate.1.task, didCompleteWithError: NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: nil))
+            }
+            let newSession = NSURLSession(configuration: configuration, delegate: strongSelf.delegate, delegateQueue: nil)
+            newSession.serverTrustPolicyManager = policy
+            strongSelf.session = newSession
+            
+        }
         delegate[request.delegate.task] = request.delegate
-
+        
+        
         if startRequestsImmediately {
             request.resume()
+            
         }
-
+        
         return request
     }
+
 
     // MARK: - SessionDelegate
 
