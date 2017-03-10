@@ -33,8 +33,8 @@ extension NSTimer {
         )
     }
     
-    @objc class func _executeBlockFromTimer( timer:NSTimer ) {
-        if let timerBlockContainer = timer.userInfo as? TimerBlockContainer {
+    @objc class func _executeBlockFromTimer(timer: NSTimer) {
+        if timer.valid, let timerBlockContainer = timer.userInfo as? TimerBlockContainer {
             timerBlockContainer.timerBlock(timeinterval:timer.timeInterval)
         }
     }
