@@ -8,27 +8,29 @@
 
 import Foundation
 
-public typealias FLTimerBlock = (timeinterval:NSTimeInterval) -> Void
+public typealias FLTimerBlock = (timeinterval: NSTimeInterval) -> Void
 
-extension NSTimer
-{
+extension NSTimer {
     private class TimerBlockContainer {
-        private(set) var timerBlock:FLTimerBlock
+        private(set) var timerBlock: FLTimerBlock
         
-        init( timerBlock:FLTimerBlock ) {
+        init(timerBlock: FLTimerBlock) {
             self.timerBlock = timerBlock;
         }
     }
     
-    public class func scheduledTimerWithTimeInterval(timeInterval:NSTimeInterval,
-                                                     repeats:Bool = false,
-                                                     block:FLTimerBlock) -> NSTimer
-    {
-        return self.scheduledTimerWithTimeInterval(timeInterval,
-                                                   target: self,
-                                                   selector:"_executeBlockFromTimer:",
-                                                   userInfo:TimerBlockContainer(timerBlock:block),
-                                                   repeats:repeats)
+    public class func scheduledTimerWithTimeInterval(
+        timeInterval: NSTimeInterval,
+        repeats: Bool = false,
+        block: FLTimerBlock
+    ) -> NSTimer {
+        return self.scheduledTimerWithTimeInterval(
+            timeInterval,
+            target: self,
+            selector: #selector(NSTimer._executeBlockFromTimer(_:)),
+            userInfo: TimerBlockContainer(timerBlock:block),
+            repeats:repeats
+        )
     }
     
     @objc class func _executeBlockFromTimer( timer:NSTimer ) {
