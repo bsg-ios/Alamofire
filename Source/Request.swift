@@ -117,6 +117,9 @@ open class Request {
 
     var startTime: CFAbsoluteTime?
     var endTime: CFAbsoluteTime?
+    
+    var timeoutTimer : Timer?
+    var timeoutTimerCallback : (() -> ())?
 
     var validations: [() -> Void] = []
 
@@ -144,7 +147,13 @@ open class Request {
         }
 
         delegate.error = error
-        delegate.queue.addOperation { self.endTime = CFAbsoluteTimeGetCurrent() }
+        delegate.queue.addOperation {
+            self.endTime = CFAbsoluteTimeGetCurrent()
+            if self.timeoutTimer?.isValid ?? false {
+                self.timeoutTimer?.invalidate()
+            }
+            self.timeoutTimer = nil
+        }
     }
 
     // MARK: Authentication
@@ -207,6 +216,14 @@ open class Request {
             object: self,
             userInfo: [Notification.Key.Task: task]
         )
+        
+        if #available(tvOS 10.0, *) {
+            self.timeoutTimer = Timer.scheduledTimer(withTimeInterval: self.session.configuration.timeoutIntervalForResource, repeats: false) { [weak self] timer in
+                self?.timeoutTimerCallback?()
+            }
+        } else {
+            // Fallback on earlier versions
+        }
     }
 
     /// Suspends the request.
@@ -220,6 +237,11 @@ open class Request {
             object: self,
             userInfo: [Notification.Key.Task: task]
         )
+        
+        if self.timeoutTimer?.isValid ?? false {
+            self.timeoutTimer?.invalidate()
+        }
+        self.timeoutTimer = nil
     }
 
     /// Cancels the request.
@@ -233,6 +255,11 @@ open class Request {
             object: self,
             userInfo: [Notification.Key.Task: task]
         )
+        
+        if self.timeoutTimer?.isValid ?? false {
+            self.timeoutTimer?.invalidate()
+        }
+        self.timeoutTimer = nil
     }
 }
 

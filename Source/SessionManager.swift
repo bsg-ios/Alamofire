@@ -121,7 +121,7 @@ open class SessionManager {
     open static let multipartFormDataEncodingMemoryThreshold: UInt64 = 10_000_000
 
     /// The underlying session.
-    open let session: URLSession
+    open var session: URLSession
 
     /// The session delegate handling all the task and session delegate callbacks.
     open let delegate: SessionDelegate
@@ -259,11 +259,21 @@ open class SessionManager {
 
             let task = try originalTask.task(session: session, adapter: adapter, queue: queue)
             let request = DataRequest(session: session, requestTask: .data(originalTask, task))
+            
+            request.timeoutTimerCallback = { [weak self] in
+                guard let strongSelf = self else { return }
+                let configuration = strongSelf.session.configuration
+                let policy = strongSelf.session.serverTrustPolicyManager
+                strongSelf.session.invalidateAndCancel()
+                let newSession = URLSession(configuration: configuration, delegate: strongSelf.delegate, delegateQueue: nil)
+                newSession.serverTrustPolicyManager = policy
+                strongSelf.session = newSession
+            }
 
             delegate[task] = request
 
             if startRequestsImmediately { request.resume() }
-
+            
             return request
         } catch {
             return request(originalRequest, failedWith: error)
