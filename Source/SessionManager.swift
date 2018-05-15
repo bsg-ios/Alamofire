@@ -265,6 +265,10 @@ open class SessionManager {
                 let configuration = strongSelf.session.configuration
                 let policy = strongSelf.session.serverTrustPolicyManager
                 strongSelf.session.invalidateAndCancel()
+                for subRequest in strongSelf.delegate.requests {
+                    guard let subTask = subRequest.value.task else { return }
+                    subRequest.value.delegate.urlSession(strongSelf.session, task: subTask, didCompleteWithError: NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: nil))
+                }
                 let newSession = URLSession(configuration: configuration, delegate: strongSelf.delegate, delegateQueue: nil)
                 newSession.serverTrustPolicyManager = policy
                 strongSelf.session = newSession

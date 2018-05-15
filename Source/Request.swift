@@ -255,11 +255,20 @@ open class Request {
             object: self,
             userInfo: [Notification.Key.Task: task]
         )
-        
+
         if self.timeoutTimer?.isValid ?? false {
             self.timeoutTimer?.invalidate()
         }
         self.timeoutTimer = nil
+    }
+
+    deinit {
+
+        if self.timeoutTimer?.isValid ?? false {
+            self.timeoutTimer?.invalidate()
+        }
+        self.timeoutTimer = nil
+
     }
 }
 
